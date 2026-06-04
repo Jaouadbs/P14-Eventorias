@@ -9,9 +9,11 @@ xcuserdata/
 .swiftpm/
 .build/
 
-# Secrets — NE JAMAIS committer
+# Private tokens and sensitive credentials
 GoogleService-Info.plist
 Secrets.xcconfig
+
+
 
 
 
