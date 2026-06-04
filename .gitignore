@@ -1,0 +1,17 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+
+# Swift Package Manager
+.swiftpm/
+.build/
+
+# Secrets — NE JAMAIS committer
+GoogleService-Info.plist
+Secrets.xcconfig
+
+
+
