@@ -1,14 +1,13 @@
 //
-//  P14_EventoriasTests.swift
+//  EventCreationViewModelTests.swift
 //  P14-EventoriasTests
 //
-//  Created by Jaouad on 04/06/2026.
+//  Created by Jaouad on 17/06/2026.
 //
 
 import XCTest
-@testable import P14_Eventorias
 
-final class P14_EventoriasTests: XCTestCase {
+final class EventCreationViewModelTests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
