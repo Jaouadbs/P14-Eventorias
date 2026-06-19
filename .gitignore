@@ -13,7 +13,8 @@ xcuserdata/
 GoogleService-Info.plist
 Secrets.xcconfig
 
-
+# Xcode automatic plist
+Info.plist
 
 
 
