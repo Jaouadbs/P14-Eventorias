@@ -6,30 +6,79 @@
 //
 
 import XCTest
+@testable import P14_Eventorias
 
+// NOTE: On ajoute `async` même pour les tests synchrones pour forcer le thread
+    // à se synchroniser correctement et éviter le crash de double libération (Bug Intel/MainActor).
+@MainActor
 final class EventCreationViewModelTests: XCTestCase {
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    func test_canSubmit_requiresTitleAddressDateAndTime() async {
+        // GIVEN
+        let sut = EventCreationViewModel(repository: MockEventRepository()) {}
+        XCTAssertFalse(sut.canSubmit)
+
+        // WHEN / THEN — titre + adresse ne suffisent pas
+        sut.title = "Concert"
+        sut.address = "1 rue de la Paix"
+        XCTAssertFalse(sut.canSubmit)
+
+        // WHEN / THEN — date + heure complètent la validation
+        sut.eventDate = Date()
+        sut.eventTime = Date()
+        XCTAssertTrue(sut.canSubmit)
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    func test_create_withValidData_forwardsDraftAndCallsOnCreated() async {
+        // GIVEN — formulaire complet
+        let repository = MockEventRepository()
+        var didCreate = false
+        let sut = EventCreationViewModel(repository: repository) { didCreate = true }
+        sut.title = "Concert"
+        sut.address = "1 rue de la Paix"
+        sut.eventDate = Date()
+        sut.eventTime = Date()
+
+        // WHEN
+        await sut.create()
+
+        // THEN
+        XCTAssertTrue(didCreate)
+        XCTAssertEqual(repository.createDrafts.count, 1)
+        XCTAssertEqual(repository.createDrafts.first?.title, "Concert")
+        XCTAssertNil(sut.errorMessage)
+        XCTAssertFalse(sut.isSaving)
     }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+    func test_create_withMissingFields_setsErrorAndSkipsRepository() async {
+        // GIVEN — adresse, date et heure manquantes
+        let repository = MockEventRepository()
+        let sut = EventCreationViewModel(repository: repository) {}
+        sut.title = "Concert"
+
+        // WHEN
+        await sut.create()
+
+        // THEN — aucune écriture, message d'erreur
+        XCTAssertNotNil(sut.errorMessage)
+        XCTAssertTrue(repository.createDrafts.isEmpty)
     }
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
-    }
+    func test_create_whenRepositoryFails_setsErrorMessage() async {
+        // GIVEN — repository qui échoue à la création
+        let repository = MockEventRepository()
+        repository.shouldFailCreate = true
+        let sut = EventCreationViewModel(repository: repository) {}
+        sut.title = "Concert"
+        sut.address = "1 rue de la Paix"
+        sut.eventDate = Date()
+        sut.eventTime = Date()
 
+        // WHEN
+        await sut.create()
+
+        // THEN
+        XCTAssertNotNil(sut.errorMessage)
+        XCTAssertFalse(sut.isSaving)
+    }
 }

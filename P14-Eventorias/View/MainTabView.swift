@@ -7,12 +7,36 @@
 
 import SwiftUI
 
+/// Vue principale de navigation par onglets (Bottom Bar).
 struct MainTabView: View {
+    let eventRepository: EventRepositoryProtocol
+    let userRepository: UserRepositoryProtocol
+    @Environment(SessionStore.self) private var session
+
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        TabView {
+            // MARK: Onglet 1 - Liste des Événements
+            Tab("Events", systemImage: "calendar") {
+                NavigationStack {
+                    EventListView(repository: eventRepository)}
+            }
+            // MARK: Onglet 2 - Profil Utilisateur
+            Tab("Profile", systemImage: "person"){
+                NavigationStack {
+                    ProfileView(
+                        uid: session.currentUser?.id ?? "",
+                        userRepository: userRepository
+                    )
+                }
+            }
+        }
+        // Onglet selectionné en rouge comme la maquette
+        .tint(.appPrimary)
     }
 }
 
 #Preview {
-    MainTabView()
+    MainTabView(eventRepository: MockEventRepository(), userRepository: MockUserRepository())
+        .environment(SessionStore(authRepository: MockAuthRepository(loggedIn: .preview)))
+        .preferredColorScheme(.dark)
 }

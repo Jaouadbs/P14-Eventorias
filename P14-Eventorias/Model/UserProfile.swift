@@ -6,3 +6,12 @@
 //
 
 import Foundation
+
+/// Modèle représentant le profil d'un utilisateur.
+struct UserProfile: Identifiable, Equatable, Sendable {
+    let id:                   String
+    var name:                 String
+    var email:                String
+    var photoURL:             URL?
+    var notificationsEnabled: Bool
+}

@@ -6,30 +6,27 @@
 //
 
 import XCTest
+@testable import P14_Eventorias
 
 final class StaticMapURLTests: XCTestCase {
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    func test_url_withKey_containsExpectedParameters() throws {
+        // GIVEN — coordonnées + fausse clé
+        let url = try XCTUnwrap(
+            StaticMapURL.url(latitude: 48.8566, longitude: 2.3522, key: "FAKE_KEY")
+        )
+        // THEN — l'URL contient les bons paramètres
+        let s = url.absoluteString
+        XCTAssertTrue(s.contains("staticmap"))
+        XCTAssertTrue(s.contains("48.8566"))
+        XCTAssertTrue(s.contains("2.3522"))
+        XCTAssertTrue(s.contains("zoom=15"))
+        XCTAssertTrue(s.contains("key=FAKE_KEY"))
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    func test_url_withoutKey_returnsNil() {
+        // GIVEN — aucune clé
+        // THEN — pas d'URL
+        XCTAssertNil(StaticMapURL.url(latitude: 0, longitude: 0, key: nil))
     }
-
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
-    }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
-    }
-
 }

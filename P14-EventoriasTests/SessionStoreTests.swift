@@ -6,30 +6,50 @@
 //
 
 import XCTest
+@testable import P14_Eventorias
 
+@MainActor
 final class SessionStoreTests: XCTestCase {
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    func test_init_withLoggedInUser_isAuthenticated() async {
+        // GIVEN — un utilisateur déjà connecté au lancement
+        let sut = SessionStore(authRepository: MockAuthRepository(loggedIn: .preview))
+
+        // THEN
+        XCTAssertTrue(sut.isAuthenticated)
+        XCTAssertEqual(sut.currentUser, .preview)
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    func test_init_withNoUser_isNotAuthenticated() async {
+        // GIVEN — aucune session persistée
+        let sut = SessionStore(authRepository: MockAuthRepository())
+
+        // THEN
+        XCTAssertFalse(sut.isAuthenticated)
+        XCTAssertNil(sut.currentUser)
     }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+    func test_setUser_updatesCurrentUser() async {
+        // GIVEN — pas de session
+        let sut = SessionStore(authRepository: MockAuthRepository())
+
+        // WHEN
+        sut.setUser(.preview)
+
+        // THEN
+        XCTAssertEqual(sut.currentUser, .preview)
+        XCTAssertTrue(sut.isAuthenticated)
     }
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
-    }
+    func test_signOut_clearsCurrentUser() async {
+        // GIVEN — session active
+        let sut = SessionStore(authRepository: MockAuthRepository(loggedIn: .preview))
 
+        // WHEN
+        sut.signOut()
+
+        // THEN
+        XCTAssertNil(sut.currentUser)
+        XCTAssertFalse(sut.isAuthenticated)
+    }
 }

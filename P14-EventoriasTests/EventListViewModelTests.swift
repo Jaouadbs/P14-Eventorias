@@ -6,30 +6,75 @@
 //
 
 import XCTest
+@testable import P14_Eventorias
 
+@MainActor
 final class EventListViewModelTests: XCTestCase {
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
+    func test_load_withEvents_setsStateToLoaded() async {
+        // GIVEN — repository avec des événements (sample = 4)
+        let sut = EventListViewModel(repository: MockEventRepository())
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
+        // WHEN
+        await sut.load()
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
-    }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
+        // THEN
+        guard case .loaded(let events) = sut.state else {
+            return XCTFail("État attendu .loaded, obtenu \(sut.state)")
         }
+        XCTAssertEqual(events.count, 4)
     }
 
+    func test_load_withEmptyList_setsStateToEmpty() async {
+        // GIVEN — repository sans événement
+        let sut = EventListViewModel(repository: MockEventRepository(events: []))
+
+        // WHEN
+        await sut.load()
+
+        // THEN
+        XCTAssertEqual(sut.state, .empty)
+    }
+
+    func test_load_whenRepositoryFails_setsStateToError() async {
+        // GIVEN — repository en échec réseau
+        let sut = EventListViewModel(repository: MockEventRepository(shouldFail: true))
+
+        // WHEN
+        await sut.load()
+
+        // THEN
+        XCTAssertEqual(sut.state, .error)
+    }
+
+    func test_load_withSearchText_filtersByTitle() async {
+        // GIVEN — recherche "Art"
+        let sut = EventListViewModel(repository: MockEventRepository())
+        sut.searchText = "Art"
+
+        // WHEN
+        await sut.load()
+
+        // THEN — tous les résultats contiennent "Art"
+        guard case .loaded(let events) = sut.state else {
+            return XCTFail("État attendu .loaded")
+        }
+        XCTAssertTrue(events.allSatisfy { $0.title.localizedCaseInsensitiveContains("Art") })
+    }
+
+    func test_load_sortDescending_returnsMostRecentFirst() async {
+        // GIVEN — tri décroissant
+        let sut = EventListViewModel(repository: MockEventRepository())
+        sut.sort = .dateDescending
+
+        // WHEN
+        await sut.load()
+
+        // THEN — le premier événement est le plus récent
+        guard case .loaded(let events) = sut.state else {
+            return XCTFail("État attendu .loaded")
+        }
+        let dates = events.map(\.date)
+        XCTAssertEqual(dates, dates.sorted(by: >))
+    }
 }

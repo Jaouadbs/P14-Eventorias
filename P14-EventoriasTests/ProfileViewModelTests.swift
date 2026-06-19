@@ -6,30 +6,58 @@
 //
 
 import XCTest
+@testable import P14_Eventorias
 
+@MainActor
 final class ProfileViewModelTests: XCTestCase {
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    func test_load_succeeds_setsStateToLoadedWithNotifications() async {
+        // GIVEN
+        let sut = ProfileViewModel(uid: "u1", repository: MockUserRepository())
+
+        // WHEN
+        await sut.load()
+
+        // THEN — ViewState non Equatable → pattern matching
+        guard case .loaded(let profile) = sut.state else {
+            return XCTFail("État attendu .loaded")
+        }
+        XCTAssertFalse(profile.email.isEmpty)
+        XCTAssertTrue(sut.notificationsEnabled)
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
+    func test_load_fails_setsStateToError() async {
+        // GIVEN — repository en échec
+        let sut = ProfileViewModel(uid: "u1", repository: MockUserRepository(shouldFail: true))
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
-    }
+        // WHEN
+        await sut.load()
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
+        // THEN
+        guard case .error = sut.state else {
+            return XCTFail("État attendu .error")
         }
     }
 
+    func test_setNotifications_updatesLocalState() async {
+        // GIVEN
+        let sut = ProfileViewModel(uid: "u1", repository: MockUserRepository())
+
+        // WHEN
+        await sut.setNotifications(false)
+
+        // THEN
+        XCTAssertFalse(sut.notificationsEnabled)
+    }
+
+    func test_setNotifications_keepsLocalStateEvenIfServerFails() async {
+        // GIVEN — la synchro serveur échoue, mais l'UI locale doit rester réactive (try?)
+        let sut = ProfileViewModel(uid: "u1", repository: MockUserRepository(shouldFail: true))
+
+        // WHEN
+        await sut.setNotifications(true)
+
+        // THEN — l'état local est mis à jour malgré l'échec réseau
+        XCTAssertTrue(sut.notificationsEnabled)
+    }
 }
